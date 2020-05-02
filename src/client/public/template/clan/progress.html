@@ -2,7 +2,7 @@
 
 <head>
   <title>出刀记录</title>
-  <meta name='viewport' content='width=1430' charset="utf-8" />
+  <meta name='viewport' content='width=1485' charset="utf-8" />
   <script src="//cdn.staticfile.org/vue/2.6.11/vue.min.js"></script>
   <script src="//cdn.staticfile.org/axios/0.19.2/axios.min.js"></script>
   <script src="//cdn.staticfile.org/element-ui/2.13.0/index.js"></script>
@@ -11,6 +11,18 @@
     .el-table td,
     .el-table th {
       text-align: center;
+    }
+    .digit6{
+      color:blue;
+    }
+    .digit7{
+      color:green;
+    }
+    .digit8{
+      color:orange;
+    }
+    .digit9{
+      color:red;
     }
   </style>
 </head>
@@ -26,8 +38,7 @@
       <el-menu-item index="5">我的</el-menu-item>
     </el-menu>
     <h1 style="text-align:center">出刀记录</h1>
-    <el-date-picker v-model="reportDate" type="date" placeholder="选择日期"></el-date-picker>
-    <el-button type="primary" @click="report_day" icon="el-icon-search" circle></el-button>
+    <el-date-picker v-model="reportDate" type="date" placeholder="选择日期" @change="report_day"></el-date-picker>
     <el-button type="primary" @click="selectUnfinished">选中未完成</el-button>
     <el-button type="warning" @click="sendRequest('send_remind')">提醒出刀</el-button>
     <el-button type="danger" @click="dropMemberVisible = true">删除成员</el-button>
@@ -40,7 +51,25 @@
     </el-dialog>
     <template v-if="progressData.length > 0">
       共[[ members.length ]]人，共[[ progressData.reduce((s,i)=>s+i.finished,0) ]]刀
-      <el-table :data="progressData" :span-method="arraySpanMethod" style="width: 1430" ref="multipleTable"
+      <a class="digit6">十万</a> <a class="digit7">百万</a> <a class="digit8">千万</a> <a class="digit9">亿</a>
+      <el-button type="primary" @click="viewTails">尾刀一览</el-button>
+      <el-dialog title="尾刀一览" :visible.sync="tailsDataVisible">
+        <template v-if="tailsData.length > 0">
+          <el-table :data="tailsData">
+            <el-table-column prop="qqid" label="QQ号" width="120" sortable></el-table-column>
+            <el-table-column prop="nickname" label="昵称" width="200" sortable></el-table-column>
+            <el-table-column prop="boss" label="boss" width="80"></el-table-column>
+            <el-table-column prop="damage" label="尾刀伤害" width="120" sortable>
+              <template slot-scope="scope">[[ scope.row.damage.toLocaleString() ]]</template>
+            </el-table-column>
+            <el-table-column prop="message" label="留言"></el-table-column>
+          </el-table>
+        </template>
+        <template v-else>
+          没有尾刀
+        </template>
+      </el-dialog>
+      <el-table :data="progressData" :span-method="arraySpanMethod" style="width: 1485" ref="multipleTable"
         @selection-change="handleSelectionChange" stripe>
         <el-table-column type="selection" width="55"></el-table-column>
         <el-table-column prop="qqid" label="QQ号" width="120" sortable></el-table-column>
@@ -49,7 +78,7 @@
         <el-table-column label="第一刀">
           <el-table-column label="尾刀" width="150">
             <template v-if="scope.row.detail[0]" slot-scope="scope">
-              [[ csummary(scope.row.detail[0]) ]]
+              <span v-html="csummary(scope.row.detail[0])"></span>
               <el-popover placement="top" effect="light" trigger="hover">
                 <p v-html="cdetail(scope.row.detail[0])"></p>
                 <i class="el-icon-info" slot="reference"></i>
@@ -58,7 +87,7 @@
           </el-table-column>
           <el-table-column label="剩余刀" width="150">
             <template v-if="scope.row.detail[1]" slot-scope="scope">
-              [[ csummary(scope.row.detail[1]) ]]
+              <span v-html="csummary(scope.row.detail[1])"></span>
               <el-popover placement="top" effect="light" trigger="hover">
                 <p v-html="cdetail(scope.row.detail[1])"></p>
                 <i class="el-icon-info" slot="reference"></i>
@@ -69,7 +98,7 @@
         <el-table-column label="第二刀">
           <el-table-column label="尾刀" width="150">
             <template v-if="scope.row.detail[2]" slot-scope="scope">
-              [[ csummary(scope.row.detail[2]) ]]
+              <span v-html="csummary(scope.row.detail[2])"></span>
               <el-popover placement="top" effect="light" trigger="hover">
                 <p v-html="cdetail(scope.row.detail[2])"></p>
                 <i class="el-icon-info" slot="reference"></i>
@@ -78,7 +107,7 @@
           </el-table-column>
           <el-table-column label="剩余刀" width="150">
             <template v-if="scope.row.detail[3]" slot-scope="scope">
-              [[ csummary(scope.row.detail[3]) ]]
+              <span v-html="csummary(scope.row.detail[3])"></span>
               <el-popover placement="top" effect="light" trigger="hover">
                 <p v-html="cdetail(scope.row.detail[3])"></p>
                 <i class="el-icon-info" slot="reference"></i>
@@ -89,7 +118,7 @@
         <el-table-column label="第三刀">
           <el-table-column label="尾刀" width="150">
             <template v-if="scope.row.detail[4]" slot-scope="scope">
-              [[ csummary(scope.row.detail[4]) ]]
+              <span v-html="csummary(scope.row.detail[4])"></span>
               <el-popover placement="top" effect="light" trigger="hover">
                 <p v-html="cdetail(scope.row.detail[4])"></p>
                 <i class="el-icon-info" slot="reference"></i>
@@ -98,13 +127,21 @@
           </el-table-column>
           <el-table-column label="剩余刀" width="150">
             <template v-if="scope.row.detail[5]" slot-scope="scope">
-              [[ csummary(scope.row.detail[5]) ]]
+              <span v-html="csummary(scope.row.detail[5])"></span>
               <el-popover placement="top" effect="light" trigger="hover">
                 <p v-html="cdetail(scope.row.detail[5])"></p>
                 <i class="el-icon-info" slot="reference"></i>
               </el-popover>
             </template>
           </el-table-column>
+        </el-table-column>
+        <el-table-column prop="sl" label="SL" width="55" sortable>
+          <template slot-scope="scope">
+            <template v-if="today==-1">-</template>
+            <template v-else>
+              <i class="el-icon-smoking" :style="{color:(scope.row.sl==today?'#F56C6C':'#67C23A')}"></i>
+            </template>
+          </template>
         </el-table-column>
         <el-table-column label="历史" width="55">
           <template slot-scope="scope">

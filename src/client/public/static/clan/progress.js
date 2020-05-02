@@ -1,13 +1,19 @@
+if (!Object.defineProperty) {
+    alert('浏览器版本过低');
+}
 var vm = new Vue({
     el: '#app',
     data: {
         progressData: [],
         members: [],
+        tailsData: [],
+        tailsDataVisible: false,
         group_name: null,
         reportDate: null,
         activeIndex: '3',
         multipleSelection: [],
         dropMemberVisible: false,
+        today: 0,
     },
     mounted() {
         var thisvue = this;
@@ -35,6 +41,7 @@ var vm = new Vue({
                 m.finished = 0;
                 m.detail = [];
             }
+            thisvue.today = res.data.today;
             thisvue.refresh(res.data.challenges);
         })).catch(function (error) {
             thisvue.$alert(error, '获取数据失败');
@@ -45,7 +52,7 @@ var vm = new Vue({
             if (cha == undefined) {
                 return '';
             }
-            return '(' + cha.cycle + '-' + cha.boss_num + ') ' + cha.damage.toLocaleString();
+            return `(${cha.cycle}-${cha.boss_num}) <a class="digit${cha.damage.toString().length}">${cha.damage}</a>`;
         },
         cdetail: function (cha) {
             if (cha == undefined) {
@@ -56,6 +63,9 @@ var vm = new Vue({
             var detailstr = nd.toLocaleString('chinese', { hour12: false }) + '<br />';
             detailstr += cha.cycle + '周目' + cha.boss_num + '号boss<br />';
             detailstr += (cha.health_ramain + cha.damage).toLocaleString() + '→' + cha.health_ramain.toLocaleString();
+            if (cha.message) {
+                detailstr += '<br>留言：' + cha.message;
+            }
             return detailstr;
         },
         arraySpanMethod: function ({ row, column, rowIndex, columnIndex }) {
@@ -78,7 +88,7 @@ var vm = new Vue({
             axios.post('../api/', {
                 action: 'get_challenge',
                 csrf_token: csrf_token,
-                ts: (thisvue.reportDate.getTime() / 1000) + 43200,
+                ts: (thisvue.reportDate ? (thisvue.reportDate.getTime() / 1000) + 43200 : null),
             }).then(function (res) {
                 if (res.data.code != 0) {
                     thisvue.$alert(res.data.message, '获取记录失败');
@@ -88,6 +98,7 @@ var vm = new Vue({
             }).catch(function (error) {
                 thisvue.$alert(error, '获取记录失败');
             })
+            this.today = -1;
         },
         refresh: function (challenges) {
             this.progressData = [...this.members];
@@ -115,15 +126,31 @@ var vm = new Vue({
             }
             thisvue.update_member_info(m);
         },
+        viewTails: function () {
+            this.tailsData = [];
+            for (const m of this.progressData) {
+                if (m.finished % 1 != 0) {
+                    let c = m.detail[m.finished * 2 - 1];
+                    this.tailsData.push({
+                        qqid: m.qqid,
+                        nickname: m.nickname,
+                        boss: c.cycle + '-' + c.boss_num,
+                        damage: c.damage,
+                        message: c.message,
+                    });
+                }
+            }
+            this.tailsDataVisible = true;
+        },
         update_member_info: function (m) {
             if (m.qqid == -1) {
                 return
             }
             for (let index = 0; index < this.progressData.length; index++) {
                 if (m.qqid == this.progressData[index].qqid) {
-                    let nickname = this.progressData[index].nickname;
+                    m.nickname = this.progressData[index].nickname;
+                    m.sl = this.progressData[index].sl;
                     this.progressData[index] = m;
-                    this.progressData[index].nickname = nickname;
                     return
                 }
             }
@@ -180,6 +207,9 @@ var vm = new Vue({
             });
         },
         sendRequest(action) {
+            if (this.multipleSelection.length === 0) {
+                this.$alert('请先勾选成员', '失败');
+            }
             var memberlist = [];
             this.multipleSelection.forEach(row => {
                 memberlist.push(row.qqid);

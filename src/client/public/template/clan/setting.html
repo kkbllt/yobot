@@ -29,6 +29,9 @@
           <el-option label="国服" value="cn"></el-option>
         </el-select>
       </el-form-item>
+      <el-form-item label="出刀表无需登录">
+        <el-checkbox v-model="form.allow_guest"></el-checkbox>
+      </el-form-item>
       <el-form-item label="通知到群">
         <el-checkbox v-model="form.notify.challenge">伤害上报</el-checkbox>
         <el-checkbox v-model="form.notify.undo">撤销上报</el-checkbox>
@@ -39,6 +42,7 @@
         <el-checkbox v-model="form.notify.suspend">挂树</el-checkbox>
         <el-checkbox v-model="form.notify.cancelsuspend">取消挂树</el-checkbox>
         <el-checkbox v-model="form.notify.modify">修改状态</el-checkbox>
+        <el-checkbox v-model="form.notify.sl">使用SL</el-checkbox>
       </el-form-item>
       <el-form-item>
         <el-button type="primary" @click="submit">确定</el-button>

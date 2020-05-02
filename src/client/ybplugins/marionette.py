@@ -1,8 +1,6 @@
 """
 后台模式的实验性功能，验证后台交互的可行性
 """
-import random
-import string
 import time
 from urllib.parse import urljoin
 
@@ -10,17 +8,8 @@ from aiocqhttp.api import Api
 from quart import Quart, jsonify, make_response, request
 
 from .templating import render_template
+from .web_util import rand_string
 from .ybdata import Admin_key
-
-
-def _rand_string(n=8):
-    return ''.join(
-        random.choice(
-            string.ascii_uppercase +
-            string.ascii_lowercase +
-            string.digits)
-        for _ in range(n)
-    )
 
 
 class Marionette:
@@ -36,12 +25,12 @@ class Marionette:
         self.api = bot_api
 
     def _gen_key(self):
-        newkey = _rand_string(6)
+        newkey = rand_string(6)
         Admin_key.create(
             key=newkey,
             valid=True,
             key_used=False,
-            cookie=_rand_string(32),
+            cookie=rand_string(32),
             create_time=int(time.time()),
         )
         newurl = urljoin(
@@ -69,7 +58,7 @@ class Marionette:
         newurl = self._gen_key()
         reply = '点击链接开始使用我：'+newurl
         if self.setting['web_mode_hint']:
-            reply += '\n\n如果连接无法打开，请参考https://yobot.xyz/usage/web-mode.html'
+            reply += '\n\n如果连接无法打开，请仔细阅读教程中《链接无法打开》的说明'
         return {
             'reply': reply,
             'block': True

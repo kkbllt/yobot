@@ -4,9 +4,11 @@
 
 由于wine与原生Windows差别较大，很多酷Q插件无法在wine中运行。
 
-**Linux运行存在问题较多，不推荐使用**，如果你坚持使用Linux来部署机器人，可以参考本文步骤。
+Linux可以使用Docker部署（测试中），具体请看[这里](./docker.md)
 
-交流群：770947581
+~~Linux 用户建议使用mirai部署~~。mirai现在还不够稳定，再等一两个月吧。
+
+**Linux运行存在问题较多，不推荐使用**，如果你坚持使用Linux来部署机器人，可以参考本文步骤。
 
 ## 前言
 
@@ -34,7 +36,7 @@
 
 参考：[httpapi插件文档配置说明](https://cqhttp.cc/docs/#/Configuration)  
 
-配置文件位于：`<酷Q运行目录>coolq/app/io.github.richardchien.coolqhttpapi/config/general.json`或`<QQ号>.json`，将其修改为[这里](./config.md)的配置，如果启动过httpapi，会出现`QQ号.ini`文件，请将其删除。
+配置文件位于：`<酷Q运行目录>coolq/app/io.github.richardchien.coolqhttpapi/config/general.json`或`<QQ号>.json`，将其修改为[这里](../usage/configuration.md)的配置，如果启动过httpapi，会出现`QQ号.ini`文件，请将其删除。
 
 **请注意：** docker 版本默认的网络模式为“桥接模式（bridge）”，此模式下与宿主机进行网络通信的ip地址为172.17.0.1，如果使用阿里云服务器，这个地址被占用则改为172.18.0.1，请将配置文件中127.0.0.1修改为这个地址。
 
@@ -44,7 +46,7 @@
 
 配置正确后，启动 httpapi 插件后会反复出现如下都提示
 
-![配置正确图片](../imgs/8ba6b840bab3ac25.jpg)
+![配置正确图片](https://x.jingzhidh.com/img/yobot/8ba6b840bab3ac25.jpg)
 
 ## 运行 yobot 服务
 
@@ -81,9 +83,13 @@ sh yobotg.sh  # 如果python的路径不是python3，请手动修改这个脚本
 
 如果需要更换主机地址、端口等信息请修改src\client\yobot_config.json配置文件。
 
-![windows下正确启动图](../imgs/aaf38d1a5cbc1c87.jpg)
+![windows下正确启动图](https://x.jingzhidh.com/img/yobot/aaf38d1a5cbc1c87.jpg)
 
-![windows下正确yobot与httpapi成功通信](../imgs/8179fdd1e46690b2.jpg)
+![windows下正确yobot与httpapi成功通信](https://x.jingzhidh.com/img/yobot/8179fdd1e46690b2.jpg)
+
+### 验证安装
+
+向机器人发送“version”，机器人会回复当前版本
 
 ## 常见问题
 
@@ -95,17 +101,9 @@ sh yobotg.sh  # 如果python的路径不是python3，请手动修改这个脚本
 
 httpapi的配置文件如[配置小节](#配置)所示，请将文件中默认端口9222(三处)改为与服务程序相同的端口号。
 
-### 酷Q的日志显示了发送，实际却没有发送
+### 其他问题
 
-这种情况一般是消息被腾讯屏蔽，常常发生在异地登陆时
-
-解决方法：
-
-* 关闭所有插件，机器人挂机一段时间
-* 在远程主机上登录电脑版QQ发一些消息
-* 在远程主机上登录QQ网页服务（比如QQ邮箱、QQ安全中心等）
-* 在远程主机上玩一玩腾讯的游戏
-* 下载QQ安全中心，确认异地登录
+见[FAQ](../usage/faq.md)
 
 ## 注意事项
 

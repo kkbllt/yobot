@@ -67,10 +67,16 @@ class Event:
         if rg is None:
             rg = self.setting.get("calender_region", "default")
         if rg == "jp":
-            self.timeline = await self.load_timeline_jp_async()
+            timeline = await self.load_timeline_jp_async()
+            if timeline is None:
+                return
+            self.timeline = timeline
             print("刷新日服日程表成功")
         elif rg == "tw":
-            self.timeline = await self.load_timeline_tw_async()
+            timeline = await self.load_timeline_tw_async()
+            if timeline is None:
+                return
+            self.timeline = timeline
             print("刷新台服日程表成功")
         else:
             self.timeline = None
@@ -109,10 +115,14 @@ class Event:
 
     async def load_timeline_jp_async(self):
         event_source = "https://gamewith.jp/pricone-re/article/show/93857"
-        async with aiohttp.request("GET", url=event_source) as response:
-            if response.status != 200:
-                raise ServerError(f"服务器状态错误：{response.status}")
-            res = await response.text()
+        try:
+            async with aiohttp.request("GET", url=event_source) as response:
+                if response.status != 200:
+                    raise ServerError(f"服务器状态错误：{response.status}")
+                res = await response.text()
+        except aiohttp.client_exceptions.ClientError:
+            print("日程表加载失败")
+            return
         soup = BeautifulSoup(res, features="html.parser")
         events_ids = set()
         timeline = Event_timeline()
@@ -238,8 +248,7 @@ class Event:
                 reply = "日程表未初始化"
             return {"reply": reply, "block": True}
         if match_num == 1:
-            reply = "未知的日期，请参考http://h3.yobot.monster/"
-            return {"reply": reply, "block": True}
+            return {"reply": "", "block": True}
         # self.check_and_update()
         if match_num == 4:
             reply = self.get_week_events()
@@ -261,6 +270,8 @@ class Event:
             await self.load_timeline_async()
         except Exception as e:
             print("刷新日程表失败，失败原因："+str(e))
+        if not self.setting['calender_on']:
+            return
         sub_groups = self.setting.get("notify_groups", [])
         sub_users = self.setting.get("notify_privates", [])
         if not (sub_groups or sub_users):

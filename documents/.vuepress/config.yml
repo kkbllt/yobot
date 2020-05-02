@@ -3,35 +3,45 @@ dest: ../docs
 title: yobot
 description: 公主链接群聊机器人
 head:
-  - [link, { rel: "icon", href: "/logo/logo.ico" }]
-  - [link, { rel: "apple-touch-icon", href: "/logo/logo.ico" }]
+  - - link
+    - rel: icon
+      href: /logo/logo.ico
+  - - link
+    - rel: apple-touch-icon
+      href: /logo/logo.ico
 themeConfig:
   logo: /logo/logo.png
   search: false
   smoothScroll: true
+  repo: https://github.com/yuudi/yobot
+  docsDir: documents
+  editLinks: true
+  editLinkText: 编辑此页面
   nav:
     - text: 首页
       link: /
     - text: 安装方法
-      link: /install/
-    - text: 功能列表
-      link: /features/
-    - text: 高级
       items:
-      - text: 开启Web模式
-        link: /usage/web-mode.md
-      - text: Web模式 - 公会战
-        link: /usage/web-clanbattle.md
-    - text: 源码
+        - text: 使用酷Q安装
+          link: /install/cq/
+        - text: 使用mirai安装
+          link: /install/mirai/
+    - text: 使用方法
       items:
-        - text: GitHub
-          link: https://github.com/yuudi/yobot
-        - text: Gitee
-          link: https://gitee.com/yobot/yobot
+        - text: 功能表
+          link: /features/
+        - text: 开启 Web 模式
+          link: /usage/web-mode/
+        - text: Web 模式公会战
+          link: /usage/web-clanbattle/
+    - text: 常见问题
+      link: /usage/faq/
+    - text: 链接无法打开
+      link: /usage/cannot-open-webpage/
     - text: 关于
-      link: /about.md
+      link: /about/
 plugins:
-  - - vuepress-plugin-clean-urls
-    - normalSuffix: "/"
-      indexSuffix: "/"
-      notFoundPath: "/404.html"
+  vuepress-plugin-clean-urls:
+    normalSuffix: /
+    indexSuffix: /
+    notFoundPath: /404.html

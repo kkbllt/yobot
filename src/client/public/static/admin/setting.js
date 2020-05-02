@@ -2,7 +2,6 @@ var vm = new Vue({
     el: '#app',
     data: {
         setting: {},
-        hide_jjckey: 0,
         activeNames: [],
         bossSetting: false,
         domainApply: false,
@@ -41,7 +40,7 @@ var vm = new Vue({
             });
         },
         sendApply: function (api) {
-            if (/^\w{1,16}$/.test(this.applyName)) {
+            if (/^[0-9a-z]{1,16}$/.test(this.applyName)) {
                 ;
             } else {
                 alert('只能包含字母、数字');

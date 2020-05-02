@@ -8,37 +8,79 @@
 
 插件版：在 `<插件目录>/yobot/src/client/yobot_data/yobot_config.json`
 
-## 配置项
+## 配置格式
 
-`host` 服务绑定的地址，默认值`0.0.0.0`
+目前只支持 json 格式
 
-`port` 服务绑定的地址，默认值 `9222`
+## 示例
 
-`public_priority` 已移除
+高亮部分必要，其他部分供参考，详细说明参考[httpapi文档](https://cqhttp.cc/docs/#/Configuration)
 
-`public_address` web 模式可以被访问的地址（如 nginx 代理后的地址），如`https://192.168.3.13:9222/yobot/`，默认自动检测
+不懂就全部复制
 
-`public_basepath` web 模式使用的目录（防止与其他应用冲突），如 `/`，默认值`/yobot/`
+```json {2-7}
+{
+    "use_http": false,
+    "use_ws": false,
+    "use_ws_reverse": true,
+    "ws_reverse_api_url": "ws://127.0.0.1:9222/ws/api/",
+    "ws_reverse_event_url": "ws://127.0.0.1:9222/ws/event/",
+    "access_token": "your-token",
+    "host": "[::]",
+    "port": 5700,
+    "ws_host": "[::]",
+    "ws_port": 6700,
+    "ws_reverse_url": "ws://127.0.0.1:9222",
+    "ws_reverse_reconnect_interval": 4000,
+    "ws_reverse_reconnect_on_code_1000": true,
+    "post_url": "",
+    "secret": "",
+    "post_message_format": "string",
+    "serve_data_files": false,
+    "update_source": "github",
+    "update_channel": "stable",
+    "auto_check_update": false,
+    "auto_perform_update": false,
+    "show_log_console": true,
+    "log_level": "info"
+}
+```
+
+## 配置项说明
+
+`host` 服务绑定的地址，默认值 `0.0.0.0`（插件版沿用主配置）
+
+`port` 服务绑定的地址，默认值 `9222`（插件版沿用主配置）
+
+`public_address` web 模式可以被访问的地址（如 nginx 代理后的地址），如`https://robot.yobot.xyz:9222/`，默认自动检测
+
+`public_basepath` web 模式使用的目录，如 `/`，默认值 `/yobot/`（如果使用了反向代理则视情况而定）
+
+`show_icp` 是否在主页显示 icp 备案信息，默认值`false`（如果需要展示备案信息，需要将 `port` 设置为 `80`、`public_basepath` 设置为 `/`，如果使用了反向代理则视情况而定）
+
+`icp_info` icp 备案信息
+
+`gongan_info` 公安备案信息
 
 `web_mode_hint` web 模式使用提示，默认值 `true`，在 web 模式下进行一次设置后自动修改为 `false`
 
-`clan_battle_mode` 公会战统计方式，可选`web` `chat`，默认值 `web`
+`clan_battle_mode` 公会战统计方式，可选`web` `chat` `none`，默认值 `web`
 
-`access_token` 与 httpapi 通信的 token，默认值 `null`
+`access_token` 与 httpapi 通信的 token，默认值 `null`（插件版沿用主配置）
 
-`super-admin` 管理员 user_id 列表
+`client_salt` 客户端盐，自动生成，请勿修改
 
-`black-list` 黑名单 user_id 列表
+`super-admin` 管理员 qq号 列表
 
-`setting-restrict` 权限控制，`0`仅主人，`1`群主，`2`管理员，`3`所有人，默认值 `3`
+`black-list` 黑名单 qq号 列表
+
+`black-list-group` 黑名单 qq群 列表
+
+`setting-restrict` 更新和重启指令需要的权限，`0`仅主人，`1`群主，`2`管理员，`3`所有人，默认值 `3`
 
 `auto_update` 自动更新，默认值 `true`
 
 `update-time` 自动更新时间，如 `03:30`，默认为随机的凌晨时间
-
-`show_jjc_solution` 已移除
-
-`jjc_auth_key` 已移除
 
 `gacha_on` 开启群聊抽卡功能，默认值 `false`
 
@@ -58,7 +100,7 @@
 
 `news_interval_auto` 自动优化新闻推送检测时间，默认值 `true`
 
-`news_interval_minutes` 新闻推送检测间隔分钟，默认值 30
+`news_interval_minutes` 新闻推送检测间隔分钟，默认值 30，当 `news_interval_auto` 启用时此项不生效
 
 `calender_region` 日程表地区，可选`jp` `tw` `cn`
 

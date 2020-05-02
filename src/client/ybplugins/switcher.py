@@ -33,7 +33,7 @@ class Switcher:
         config_path = os.path.join(
             self.setting["dirname"], "yobot_config.json")
         with open(config_path, "w", encoding="utf-8") as f:
-            json.dump(save_setting, f, indent=4, ensure_ascii=False)
+            json.dump(save_setting, f, indent=4)
 
     def get_url_content(self, url: str) -> Union[int, str]:
         try:
@@ -128,6 +128,7 @@ class Switcher:
     def execute(self, match_num: int, msg: dict) -> dict:
         super_admins = self.setting.get("super-admin", list())
         restrict = self.setting.get("setting-restrict", 3)
+        cmd = msg["raw_message"]
         if msg["sender"]["user_id"] in super_admins:
             role = 0
         else:
@@ -139,12 +140,13 @@ class Switcher:
             else:
                 role = 3
         if role > restrict:
+            if not cmd.startswith(("卡池", "邮箱", "新闻", "boss", "码"), 2):
+                return None
             reply = "你的权限不足"
             return {"reply": reply, "block": True}
 
-        cmd = msg["raw_message"]
         if match_num == 0x300:
-            if not self.setting["web_mode_hint"]:
+            if self.setting["clan_battle_mode"] != "chat":
                 return urljoin(
                     self.setting['public_address'],
                     '{}admin/setting/'.format(self.setting['public_basepath']))
@@ -187,6 +189,10 @@ class Switcher:
                 reply = "设置码版本错误"
         elif match_num == 0x500:
             if cmd == "设置卡池":
+                if self.setting["clan_battle_mode"] != "chat":
+                    return urljoin(
+                        self.setting['public_address'],
+                        '{}admin/pool-setting/'.format(self.setting['public_basepath']))
                 reply = self.get_setting_pool_url()
             elif cmd == "设置邮箱":
                 if self.setting["clan_battle_mode"] != "chat":
@@ -194,7 +200,7 @@ class Switcher:
                 reply = self.setting_url["mail"]
             elif cmd == "设置新闻" or cmd == "设置日程":
                 if self.setting["clan_battle_mode"] != "chat":
-                    return '请机器人管理员在后台设置中进行boss设置'
+                    return '请机器人管理员在后台设置中进行设置'
                 keys = ("news_jp_official", "news_jp_twitter", "news_tw_official",
                         "news_tw_facebook", "news_cn_official", "news_cn_bilibili",
                         "news_interval_minutes", "notify_groups", "notify_privates",
@@ -202,7 +208,7 @@ class Switcher:
                 reply = self.dump_url(keys, "news")
             elif cmd == "设置boss":
                 if self.setting["clan_battle_mode"] != "chat":
-                    return '请机器人管理员在后台设置中进行boss设置'
+                    return '请机器人管理员后台设置中进行设置（boss设置在最下方折叠）'
                 with open(os.path.join(self.setting["dirname"], "boss3.json")) as f:
                     content = json.load(f)
                 query = json.dumps(content, separators=(',', ':'))

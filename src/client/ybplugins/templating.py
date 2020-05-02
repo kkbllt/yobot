@@ -1,20 +1,20 @@
-import datetime
 import os
 
 import jinja2
-from quart import session, url_for
+from quart import session, url_for 
 
 static_folder = os.path.abspath(os.path.join(
     os.path.dirname(__file__), '../public/static'))
 template_folder = os.path.abspath(os.path.join(
     os.path.dirname(__file__), '../public/template'))
 
-_tz_beijing = datetime.timezone(datetime.timedelta(hours=8))
+Ver = 'unknown'
 
 
-def from_timestamp(timestamp):
-    dt = datetime.datetime.fromtimestamp(timestamp, _tz_beijing)
-    return dt.strftime('%Y{}%m{}%d{} %H:%M:%S').format(*'年月日')
+def _vertioned_url_for(endpoint, *args, **kwargs):
+    if endpoint == 'yobot_static':
+        kwargs['v'] = Ver
+    return url_for(endpoint, *args, **kwargs)
 
 
 _env = jinja2.Environment(
@@ -22,8 +22,7 @@ _env = jinja2.Environment(
     enable_async=True,
 )
 _env.globals['session'] = session
-_env.globals['url_for'] = url_for
-_env.globals['from_timestamp'] = from_timestamp
+_env.globals['url_for'] = _vertioned_url_for
 
 
 async def render_template(template, **context):

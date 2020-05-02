@@ -6,8 +6,6 @@
 
 为了使用yobot三代，本文将指导安装：酷Q机器人（用于接发QQ消息）、yobot服务（用于处理消息）。
 
-交流群：770947581
-
 ## 准备服务器
 
 虽然在自己电脑运行也可以，不过最好能租一个服务器，以便长期挂机和提供web服务
@@ -39,11 +37,11 @@ yobot 三代基于酷Q机器人和 httpapi 插件实现
 
 由于新装的 httpapi 启动时有时候会重置配置文件，所以如果 httpapi 启动后与下图不符请手动配置一下文件
 
-配置文件位于：`<酷Q运行目录>data\app\io.github.richardchien.coolqhttpapi\config\general.json`或 *QQ号.json* ，将其修改为[这里](./config.md)的配置。
+配置文件位于：`<酷Q运行目录>data\app\io.github.richardchien.coolqhttpapi\config\general.json`或 *QQ号.json* ，将其修改为[这里](../usage/configuration.md)的配置。
 
 配置正确后，启动 httpapi 插件后会反复出现如下都提示
 
-![配置正确图片](../imgs/8ba6b840bab3ac25.jpg)
+![配置正确图片](https://x.jingzhidh.com/img/yobot/8ba6b840bab3ac25.jpg)
 
 ## 运行yobot服务
 
@@ -66,9 +64,13 @@ yobot 三代基于酷Q机器人和 httpapi 插件实现
 
 如果需要更换主机地址、端口等信息请修改src\client\yobot_config.json配置文件。
 
-![windows下正确启动图](../imgs/aaf38d1a5cbc1c87.jpg)
+![windows下正确启动图](https://x.jingzhidh.com/img/yobot/aaf38d1a5cbc1c87.jpg)
 
-![windows下正确yobot与httpapi成功通信](../imgs/8179fdd1e46690b2.jpg)
+![windows下正确yobot与httpapi成功通信](https://x.jingzhidh.com/img/yobot/8179fdd1e46690b2.jpg)
+
+### 验证安装
+
+向机器人发送“version”，机器人会回复当前版本
 
 ## 常见问题
 
@@ -80,17 +82,9 @@ yobot 三代基于酷Q机器人和 httpapi 插件实现
 
 httpapi的配置文件如[配置小节](#配置)所示，请将文件中默认端口9222(三处)改为与服务程序相同的端口号。
 
-### 酷Q的日志显示了发送，实际却没有发送
+### 其他问题
 
-这种情况一般是消息被腾讯屏蔽，常常发生在异地登陆时
-
-解决方法：
-
-* 关闭所有插件，机器人挂机一段时间
-* 在远程主机上登录电脑版QQ发一些消息
-* 在远程主机上登录QQ网页服务（比如QQ邮箱、QQ安全中心等）
-* 在远程主机上玩一玩腾讯的游戏
-* 下载QQ安全中心，确认异地登录
+见[FAQ](../usage/faq.md)
 
 ## 注意事项
 

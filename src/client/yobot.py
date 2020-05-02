@@ -17,22 +17,27 @@ from opencc import OpenCC
 from quart import Quart, send_file
 
 if __package__:
-    from .ybplugins import (boss_dmg, calender, char_consult, clan_battle,
-                            gacha, homepage, jjc_consult, login, marionette,
-                            push_news, settings, switcher, updater, web_util,
-                            yobot_msg, ybdata)
-    from .yybplugins import custom
+    from .ybplugins import (boss_dmg, calender, clan_battle, gacha, homepage,
+                            jjc_consult, login, marionette, push_news, settings,
+                            switcher, templating, updater, web_util, ybdata,
+                            yobot_msg)
+    from .ybplugins.yybplugins import custom
 else:
-    from ybplugins import (boss_dmg, calender, char_consult, clan_battle,
-                           gacha, homepage, jjc_consult, login, marionette,
-                           push_news, settings, switcher, updater, web_util,
-                           yobot_msg, ybdata)
-    from yybplugins import custom
+    from ybplugins import (boss_dmg, calender, clan_battle, gacha, homepage,
+                           jjc_consult, login, marionette, push_news, settings,
+                           switcher, templating, updater, web_util, ybdata,
+                           yobot_msg)
+    from ybplugins.yybplugins import custom
+
+# 本项目构建的框架非常粗糙且幼稚，不建议各位把时间浪费本项目上
+# 如果想开发自己的机器人，建议直接使用 nonebot 框架
+# https://nonebot.cqp.moe/
 
 
 class Yobot:
-    Version = "[v3.3.18]"
-    Commit = {"yuudi": 63, "sunyubo": 1, "S": 2}
+    Version = "[v3.5.1]"
+    Version_id = 103
+    #  "git rev-list --count HEAD"
 
     def __init__(self, *,
                  data_path: str,
@@ -62,6 +67,7 @@ class Yobot:
             self.glo_setting = json.load(config_file)
         if not os.path.exists(config_f_path):
             shutil.copyfile(default_config_f_path, config_f_path)
+            print("设置已初始化，发送help获取帮助")
         boss_filepath = os.path.join(dirname, "boss3.json")
         if not os.path.exists(boss_filepath):
             if is_packaged:
@@ -71,6 +77,15 @@ class Yobot:
                 default_boss_filepath = os.path.join(
                     os.path.dirname(__file__), "default_boss.json")
             shutil.copyfile(default_boss_filepath, boss_filepath)
+        pool_filepath = os.path.join(dirname, "pool3.json")
+        if not os.path.exists(pool_filepath):
+            if is_packaged:
+                default_pool_filepath = os.path.join(
+                    sys._MEIPASS, "packedfiles", "default_pool.json")
+            else:
+                default_pool_filepath = os.path.join(
+                    os.path.dirname(__file__), "default_pool.json")
+            shutil.copyfile(default_pool_filepath, pool_filepath)
         with open(config_f_path, "r+", encoding="utf-8") as config_file:
             cfg = json.load(config_file)
             for k in self.glo_setting.keys():
@@ -78,11 +93,10 @@ class Yobot:
                     self.glo_setting[k] = cfg[k]
             config_file.seek(0)
             config_file.truncate()
-            json.dump(self.glo_setting, config_file,
-                      ensure_ascii=False, indent=4)
+            json.dump(self.glo_setting, config_file, indent=4)
 
         if verinfo is None:
-            verinfo = updater.get_version(self.Version, self.Commit)
+            verinfo = updater.get_version(self.Version, self.Version_id)
 
         modified = False
 
@@ -116,17 +130,24 @@ class Yobot:
 
         # initialize update time
         if self.glo_setting["update-time"] == "random":
-            self.glo_setting["update-time"] = "{}:{}".format(
+            self.glo_setting["update-time"] = "{:02d}:{:02d}".format(
                 random.randint(2, 4),
                 random.randint(0, 59)
             )
             modified = True
 
+        # initialize client salt
+        if self.glo_setting["client_salt"] is None:
+            self.glo_setting["client_salt"] = web_util.rand_string(16)
+            modified = True
+
         # save initialization
         if modified:
             with open(config_f_path, "w", encoding="utf-8") as config_file:
-                json.dump(self.glo_setting, config_file,
-                          ensure_ascii=False, indent=4)
+                json.dump(self.glo_setting, config_file, indent=4)
+
+        # initialize utils
+        templating.Ver = self.Version[2:-1]
 
         # generate random secret_key
         if(quart_app.secret_key is None):
@@ -180,7 +201,6 @@ class Yobot:
             switcher.Switcher(**kwargs),
             yobot_msg.Message(**kwargs),
             gacha.Gacha(**kwargs),
-            char_consult.Char_consult(**kwargs),
             jjc_consult.Consult(**kwargs),
             boss_dmg.Boss_dmg(**kwargs),
             push_news.News(**kwargs),
@@ -222,14 +242,16 @@ class Yobot:
                     msg["raw_message"][len(preffix):])
 
         # black-list
-        if msg["sender"]["user_id"] in self.glo_setting.get("black-list", list()):
+        if msg["sender"]["user_id"] in self.glo_setting["black-list"]:
+            return None
+        if msg["message_type"] == "group" and (msg["group_id"] in self.glo_setting["black-list-group"]):
             return None
 
         # zht-zhs convertion
         if self.glo_setting.get("zht_in", False):
             msg["raw_message"] = self.cct2s.convert(msg["raw_message"])
         if msg["sender"].get("card", "") == "":
-            msg["sender"]["card"] = msg["sender"]["nickname"]
+            msg["sender"]["card"] = msg["sender"].get("nickname", "无法获取昵称")
 
         # run new
         reply_msg = None
@@ -277,7 +299,8 @@ class Yobot:
                     break
                 if res is None:
                     break
-                replys.append(res["reply"])
+                if res["reply"]:
+                    replys.append(res["reply"])
                 if res["block"]:
                     break
         reply_msg = "\n".join(replys)

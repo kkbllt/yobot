@@ -1,13 +1,19 @@
 # Web 模式
 
+机器人开启web模式后，可以使用网页版的公会战交互界面。网页版和群聊版互通。
+
 ## 开启 Web 模式
 
-### 方法 1：直接连接
+请在服务器上运行软件，[服务器推荐](../install/server.md)
 
-在 yobot 配置文件中，将`host`字段设置为`0.0.0.0`（即默认值）
+如果坚持在本地计算机运行，也可以使用内网穿透（不建议新手使用）
+
+### 方法 1：直接连接（最简单）
+
+在 yobot [配置文件](./configuration.md)中，将`host`字段恢复为`0.0.0.0`（即默认值，如果没有手动修改过就不用管）
 
 在服务器的防火墙面板里，打开 9222 端口（如端口更换则为更换后的端口）  
-（[阿里云开启方法](https://yq.aliyun.com/articles/701181) [腾讯云开启方法](https://cloud.tencent.com/document/product/213/39740)）
+（[阿里云开启方法](https://help.aliyun.com/document_detail/25471.html) [腾讯云开启方法](https://cloud.tencent.com/document/product/213/39740)）
 
 如果服务器没有公网地址，可以使用端口映射
 
@@ -18,7 +24,7 @@
 
 :::
 
-### 方法 2：使用 Nginx 代理（推荐）
+### 方法 2：使用 Nginx 代理（功能最强）
 
 如果需要为网页添加日志记录、HTTPS支持、安全限制等，或者需要同时部署其他站点，可以使用 Nginx、Apache 之类的服务器软件
 
@@ -40,13 +46,13 @@ server {
 
   location /yobot/  # 如果你修改了`public_basepath`，请同时修改这里的`location`
   {
-    proxy_pass http://localhost:9222/;  # 反向代理
+    proxy_pass http://localhost:9222;  # 反向代理
     proxy_set_header X-Real-IP $remote_addr;  # 传递用户IP
   }
 
   ## 强制使用https加密通信（可选，安全）
-  #if ($server_port !~ 443){
-  #  rewrite ^(/.*)$ https://$host$1 permanent;
+  #if ($server_port != 443){
+  #  return 301 https://$host$request_uri;
   #}
 
   ## 静态文件直接访问（可选，性能）
@@ -100,8 +106,8 @@ server {
 
 开启 Web 模式后，可以使用[新版公会战](./web-clanbattle.md)
 
-## 不使用 Web 模式
+## 不使用 Web 模式（不推荐）
 
-web 模式需要服务器有公网地址或端口映射，如果机器人无法使用 web 模式，可以将公会战统计模式切换为旧版方式。
+使用旧版的公会战。
 
 在[配置文件](./configuration.md)中，将 `clan_battle_mode` 字段修改为 `chat`

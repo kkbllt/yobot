@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import pickle
@@ -6,20 +7,24 @@ import re
 import sqlite3
 import time
 from typing import List, Union
+from urllib.parse import urljoin
 
 import requests
+from quart import Quart
 
+from .templating import render_template
 from .yobot_exceptions import CodingError, ServerError
 
 
 class Gacha:
     Passive = True
     Active = False
-    Request = False
+    Request = True
     URL = "http://api.yobot.xyz/3.1.4/pool.json"
 
-    def __init__(self, glo_setting: dict, *args, **kwargs):
+    def __init__(self, glo_setting: dict, bot_api, *args, **kwargs):
         self.setting = glo_setting
+        self.bot_api = bot_api
         self.pool_file_path = os.path.join(
             self.setting["dirname"], "pool3.json")
         self.pool_checktime = 0
@@ -69,7 +74,7 @@ class Gacha:
         return result_list
 
     def gacha(self, qqid: int, nickname: str) -> str:
-        self.check_ver()
+        # self.check_ver()  # no more updating
         db_exists = os.path.exists(os.path.join(
             self.setting["dirname"], "collections.db"))
         db_conn = sqlite3.connect(os.path.join(
@@ -122,7 +127,7 @@ class Gacha:
         db_conn.close()
         return reply
 
-    def show_colle(self, qqid, nickname, cmd: Union[None, str] = None) -> str:
+    async def show_colleV2_async(self, qqid, nickname, cmd: Union[None, str] = None) -> str:
         if not os.path.exists(os.path.join(self.setting["dirname"], "collections.db")):
             return "没有仓库"
         moreqq_list = []
@@ -134,8 +139,8 @@ class Gacha:
         db = db_conn.cursor()
         sql_info = list(db.execute(
             "SELECT colle FROM Colle WHERE qqid=?", (qqid,)))
+        db_conn.close()
         if len(sql_info) != 1:
-            db_conn.close()
             return nickname + "的仓库为空"
         colle = pickle.loads(sql_info[0][0])
         more_colle = []
@@ -143,49 +148,45 @@ class Gacha:
             sql_info = list(db.execute(
                 "SELECT colle FROM Colle WHERE qqid=?", (other_qq,)))
             if len(sql_info) != 1:
-                db_conn.close()
                 return "[CQ:at,qq={}]的仓库为空".format(other_qq)
             more_colle.append(pickle.loads(sql_info[0][0]))
         if not os.path.exists(os.path.join(self.setting["dirname"], "temp")):
             os.mkdir(os.path.join(self.setting["dirname"], "temp"))
-        colle_file = os.path.join(
-            self.setting["dirname"], "temp",
-            str(qqid)+time.strftime("_%Y%m%d_%H%M%S", time.localtime())+".csv")
         showed_colle = set(colle)
         for item in more_colle:
             showed_colle = showed_colle.union(item)
-        with open(colle_file, "w", encoding="utf-8-sig") as f:
-            f.write("角色,"+nickname)
-            for memb in moreqq_list:
-                f.write(",")
-                try:
-                    # 使用老李api
-                    res = requests.get(
-                        "http://laoliapi.cn/king/qq.php?qq=" + str(memb))
-                    if res.status_code == 200:
-                        f.write(json.loads(res.text).get("name", str(memb)))
-                    else:
-                        f.write(str(memb))
-                except requests.exceptions.ConnectionError:
-                    f.write(str(memb))
-            f.write("\n")
-            for char in sorted(showed_colle):
-                f.write(char + "," + str(colle.get(char, 0)))
-                for item in more_colle:
-                    f.write("," + str(item.get(char, 0)))
-                f.write("\n")
-        with open(colle_file, 'rb') as f:
-            files = {'file': f}
+        showdata = {"title": "仓库"}
+        showdata["header"] = ["角色", nickname]
+        for memb in moreqq_list:
             try:
-                response = requests.post(
-                    'http://api.yobot.xyz/v2/reports/', files=files)
-            except requests.exceptions.ConnectionError as c:
-                error = "无法连接到{}，错误信息：{}".format('api.yobot.xyz', c)
-                print(error)
-                return error
-        p = response.text
-        reply = (nickname + "的仓库：" + p)
-        db_conn.close()
+                membinfo = await self.bot_api.get_stranger_info(memb)
+                showdata["header"].append(membinfo["nickname"])
+            except:
+                showdata["header"].append(str(memb))
+        showdata["body"] = []
+        for char in sorted(showed_colle):
+            line = [char, str(colle.get(char, 0))]
+            for item in more_colle:
+                line.append(str(item.get(char, 0)))
+            showdata["body"].append(line)
+
+        page = await render_template(
+            'collection.html',
+            data=showdata,
+        )
+
+        output_foler = os.path.join(self.setting['dirname'], 'output')
+        num = len(os.listdir(output_foler)) + 1
+        os.mkdir(os.path.join(output_foler, str(num)))
+        filename = 'collection-{}.html'.format(random.randint(0, 999))
+        with open(os.path.join(output_foler, str(num), filename), 'w', encoding='utf-8') as f:
+            f.write(page)
+        reply = urljoin(
+            self.setting['public_address'],
+            '{}output/{}/{}'.format(
+                self.setting['public_basepath'], num, filename))
+        if self.setting['web_mode_hint']:
+            reply += '\n\n如果连接无法打开，请仔细阅读教程中《链接无法打开》的说明'
         return reply
 
     def check_ver(self) -> None:
@@ -215,27 +216,50 @@ class Gacha:
             return 1
         elif cmd.startswith("仓库"):
             return 4
+        elif cmd == "在线十连" or cmd == "在线抽卡":
+            return 5
         else:
             return 0
 
     def execute(self, func_num: int, msg: dict):
+        if func_num == 5:
+            return urljoin(
+                self.setting["public_address"],
+                '{}gacha/'.format(self.setting['public_basepath'])
+            )
         if ((
                 msg["message_type"] == "group"
                 and not self.setting.get("gacha_on", True))
             or (
                 msg["message_type"] == "private"
                 and not self.setting.get("gacha_private_on", True))):
-            reply = "功能已关闭"
+            reply = None
         elif func_num == 1:
             reply = self.gacha(
                 qqid=msg["sender"]["user_id"],
                 nickname=msg["sender"]["card"])
         elif func_num == 4:
-            reply = self.show_colle(
-                qqid=msg["sender"]["user_id"],
-                nickname=msg["sender"]["card"],
-                cmd=msg["raw_message"][2:])
+            async def show_colle():
+                df_reply = await self.show_colleV2_async(
+                    qqid=msg["sender"]["user_id"],
+                    nickname=msg["sender"]["card"],
+                    cmd=msg["raw_message"][2:],
+                )
+                replymsg = msg.copy()
+                replymsg["message"] = df_reply
+                replymsg["at_sender"] = False
+                await self.bot_api.send_msg(**replymsg)
+            asyncio.ensure_future(show_colle())
+            reply = None
         return {
             "reply": reply,
             "block": True
         }
+
+    def register_routes(self, app: Quart):
+
+        @app.route(
+            urljoin(self.setting['public_basepath'], 'gacha/'),
+            methods=['GET'])
+        async def yobot_gacha():
+            return await render_template('gacha.html')
